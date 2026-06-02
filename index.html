@@ -213,22 +213,16 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-.hero-banner::before {
-  content: '';
-  position: absolute;
-  right: -20px; top: -20px;
-  width: 180px; height: 180px;
-  border-radius: 50%;
-  border: 30px solid rgba(212,160,23,0.15);
-}
+.hero-banner::before, .hero-banner::after { content: none; }
 
-.hero-banner::after {
-  content: '';
+
+.hero-softball {
   position: absolute;
-  right: 40px; bottom: -40px;
-  width: 120px; height: 120px;
-  border-radius: 50%;
-  border: 20px solid rgba(212,160,23,0.1);
+  right: -10px;
+  top: -10px;
+  width: 160px;
+  height: 160px;
+  pointer-events: none;
 }
 
 .hero-title {
@@ -886,7 +880,17 @@ td:first-child:hover { text-decoration: underline; }
 
 /* ====== RESPONSIVE ====== */
 @media(max-width: 480px) {
-  .hero-title { font-size: 32px; }
+  
+.hero-softball {
+  position: absolute;
+  right: -10px;
+  top: -10px;
+  width: 160px;
+  height: 160px;
+  pointer-events: none;
+}
+
+.hero-title { font-size: 32px; }
   .record-num { font-size: 40px; }
   .view { padding: 14px; }
   .lb-podium { grid-template-columns: 1fr; }
@@ -1006,6 +1010,30 @@ select, input {
 <!-- HOME -->
 <div class="view active" id="view-home">
   <div class="hero-banner">
+    <svg class="hero-softball" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <circle cx="60" cy="60" r="55" fill="#f0b823" opacity="0.22"/>
+  <circle cx="60" cy="60" r="55" fill="none" stroke="#f0b823" stroke-width="2" opacity="0.3"/>
+  <!-- top stitch: ⌣ shape, dips down in middle -->
+  <path d="M10,48 C35,68 85,68 110,48" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+  <!-- bottom stitch: ⌢ shape, bows up in middle -->
+  <path d="M10,72 C35,52 85,52 110,72" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+  <!-- top stitch tick marks (bisecting the curve) -->
+  <line x1="20.3" y1="49.4" x2="16.1" y2="57.4" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="33.9" y1="54.9" x2="31.4" y2="63.6" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="49.3" y1="57.9" x2="48.3" y2="66.9" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="60.0" y1="58.5" x2="60.0" y2="67.5" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="70.7" y1="57.9" x2="71.7" y2="66.9" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="86.1" y1="54.9" x2="88.6" y2="63.6" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="99.7" y1="49.4" x2="103.9" y2="57.4" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <!-- bottom stitch tick marks (bisecting the curve) -->
+  <line x1="16.1" y1="62.6" x2="20.3" y2="70.6" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="31.4" y1="56.4" x2="33.9" y2="65.1" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="48.3" y1="53.1" x2="49.3" y2="62.1" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="60.0" y1="52.5" x2="60.0" y2="61.5" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="71.7" y1="53.1" x2="70.7" y2="62.1" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="88.6" y1="56.4" x2="86.1" y2="65.1" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <line x1="103.9" y1="62.6" x2="99.7" y2="70.6" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+</svg>
     <div class="hero-title">ONE HIT WONDERS</div>
     <div class="hero-subtitle">Chicago Softball · Est. 2015</div>
     <div class="hero-record">
@@ -1925,18 +1953,18 @@ function switchProfileTab(name, el) {
 
 // ---- Career Chart ----
 const CHART_STATS = [
-  { id:'avg',   label:'AVG',   zeroFloor:true,  ceiling:1,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'obp',   label:'OBP',   zeroFloor:true,  ceiling:1,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'slg',   label:'SLG',   zeroFloor:true,  ceiling:4,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'ops',   label:'OPS',   zeroFloor:true,  ceiling:5,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'d',     label:'2B',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'t',     label:'3B',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'hr',    label:'HR',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'bb',    label:'BB',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'r',     label:'RS',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'rbi',   label:'RBI',   zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'rc',    label:'RC',    zeroFloor:false, ceiling:null, fmt: v => v!=null ? v.toFixed(1) : null },
-  { id:'rc_pa', label:'RC/PA', zeroFloor:false, ceiling:null, fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'avg',   label:'AVG',   zeroFloor:true,  maxY:1,   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'obp',   label:'OBP',   zeroFloor:true,  maxY:1,   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'slg',   label:'SLG',   zeroFloor:true,  maxY:4,   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'ops',   label:'OPS',   zeroFloor:true,  maxY:5,   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'d',     label:'2B',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'t',     label:'3B',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'hr',    label:'HR',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'bb',    label:'BB',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'r',     label:'RS',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'rbi',   label:'RBI',   zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'rc',    label:'RC',    zeroFloor:false, fmt: v => v!=null ? v.toFixed(1) : null },
+  { id:'rc_pa', label:'RC/PA', zeroFloor:false, fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
 ];
 let _chartActiveStat = 'avg';
 let _chartMode = 'season'; // 'season' or 'career'
@@ -2039,7 +2067,8 @@ function renderCareerChart(player, statId, mode) {
   const padV   = range * 0.15;
   const rawLo  = minV - padV;
   const lo     = stat.zeroFloor ? Math.max(0, rawLo) : rawLo;
-  const hi     = maxV + padV;
+  const rawHi  = maxV + padV;
+  const hi     = stat.maxY != null ? Math.min(stat.maxY, rawHi) : rawHi;
 
   const xOf = i => PAD.left + (i / (points.length - 1)) * chartW;
   const yOf = v => PAD.top  + chartH - ((v - lo) / (hi - lo)) * chartH;
