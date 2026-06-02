@@ -692,6 +692,7 @@ td:first-child:hover { text-decoration: underline; }
 .alpha-btn.disabled { opacity: 0.25; cursor: default; pointer-events: none; }
 .alpha-section-header {
   width: 100%;
+  grid-column: 1 / -1;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 22px;
   letter-spacing: 1px;
@@ -1662,7 +1663,7 @@ function renderPlayerGrid() {
 
   // Build alphabet bar (A-Z mode only)
   const alphaBar = document.getElementById('alphaBar');
-  const usedLetters = new Set(players.map(([n]) => n[0].toUpperCase()));
+  const usedLetters = new Set(players.map(([n]) => lastName(n)[0].toUpperCase()));
   if (_playerSort === 'az') {
     alphaBar.classList.add('visible');
     alphaBar.innerHTML = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l =>
@@ -1677,7 +1678,7 @@ function renderPlayerGrid() {
     // Group by first letter with section headers
     const groups = {};
     players.forEach(([name,p]) => {
-      const l = name[0].toUpperCase();
+      const l = lastName(name)[0].toUpperCase();
       if (!groups[l]) groups[l] = [];
       groups[l].push([name,p]);
     });
