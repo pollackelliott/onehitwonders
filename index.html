@@ -1906,7 +1906,7 @@ function buildCareerChart(p) {
 
   const modeBtns = [
     {id:'season', label:'By Season'},
-    {id:'career', label:'Cumulative Career'}
+    {id:'career', label:'Career'}
   ].map(m => `<div class="chart-stat-btn" id="chartMode-${m.id}"
       style="${m.id===_chartMode?'background:var(--gold);color:var(--dark);border-color:var(--gold)':''}"
       onclick="
