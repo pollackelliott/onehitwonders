@@ -1766,68 +1766,120 @@ function switchProfileTab(name, el) {
 
 // ---- Career Chart ----
 const CHART_STATS = [
-  { id:'avg',   label:'AVG',   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'ops',   label:'OPS',   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'rc_pa', label:'RC/PA', fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'rc',    label:'RC',    fmt: v => v!=null ? v.toFixed(1) : null },
-  { id:'hr',    label:'HR',    fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'obp',   label:'OBP',   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'slg',   label:'SLG',   fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'avg',   label:'AVG',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'obp',   label:'OBP',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'slg',   label:'SLG',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'ops',   label:'OPS',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'hr',    label:'HR',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'rc',    label:'RC',    zeroFloor:false, fmt: v => v!=null ? v.toFixed(1) : null },
+  { id:'rc_pa', label:'RC/PA', zeroFloor:false, fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
 ];
 let _chartActiveStat = 'avg';
+let _chartMode = 'season'; // 'season' or 'career'
 let _chartPlayer = null;
 
-function renderCareerChart(player, statId) {
-  _chartActiveStat = statId || _chartActiveStat;
-  _chartPlayer = player || _chartPlayer;
+function _chartRC(c) {
+  if (!c.pa) return 0;
+  const A = c.h+c.bb, S = c.h-c.d-c.t-c.hr;
+  const B = 1.125*S+1.69*c.d+3.02*c.t+3.73*c.hr+0.29*c.bb+0.492*(c.sf||0)-0.04*c.k;
+  return ((2.4*c.pa+A)*(3*c.pa+B)/(9*c.pa))-0.9*c.pa;
+}
+
+function _seasonVal(ss, id) {
+  const obp = ss.pa>0 ? (ss.h+ss.bb)/ss.pa : null;
+  const slg = ss.ab>0 ? (ss.h+ss.d+2*ss.t+3*ss.hr)/ss.ab : null;
+  switch(id) {
+    case 'avg':   return ss.ab>0 ? ss.h/ss.ab : null;
+    case 'obp':   return obp;
+    case 'slg':   return slg;
+    case 'ops':   return obp!=null&&slg!=null ? obp+slg : null;
+    case 'hr':    return ss.hr;
+    case 'rc':    return ss.rc != null ? ss.rc : _chartRC(ss);
+    case 'rc_pa': return ss.rc_pa != null ? ss.rc_pa : (ss.pa>0 ? _chartRC(ss)/ss.pa : null);
+    default:      return null;
+  }
+}
+
+function _cumVal(c, id) {
+  const obp = c.pa>0 ? (c.h+c.bb)/c.pa : null;
+  const slg = c.ab>0 ? (c.h+c.d+2*c.t+3*c.hr)/c.ab : null;
+  switch(id) {
+    case 'avg':   return c.ab>0 ? c.h/c.ab : null;
+    case 'obp':   return obp;
+    case 'slg':   return slg;
+    case 'ops':   return obp!=null&&slg!=null ? obp+slg : null;
+    case 'hr':    return c.hr;
+    case 'rc':    return _chartRC(c);
+    case 'rc_pa': return c.pa>0 ? _chartRC(c)/c.pa : null;
+    default:      return null;
+  }
+}
+
+function getChartPoints(p, statId, mode) {
+  const seasons = Object.keys(p.seasons).sort(seasonSort);
+  if (mode === 'season') {
+    return seasons.map(s => {
+      const v = _seasonVal(p.seasons[s], statId);
+      return { label: seasonLabel(s), val: (v!=null && isFinite(v)) ? v : null };
+    }).filter(pt => pt.val !== null);
+  }
+  // cumulative career
+  const cum = {ab:0,h:0,bb:0,sf:0,d:0,t:0,hr:0,k:0,pa:0};
+  return seasons.map(s => {
+    const ss = p.seasons[s];
+    cum.ab+=ss.ab; cum.h+=ss.h; cum.bb+=ss.bb; cum.sf+=(ss.sf||0);
+    cum.d+=ss.d;   cum.t+=ss.t; cum.hr+=ss.hr; cum.k+=ss.k; cum.pa+=ss.pa;
+    const v = _cumVal(cum, statId);
+    return { label: seasonLabel(s), val: (v!=null && isFinite(v)) ? v : null };
+  }).filter(pt => pt.val !== null);
+}
+
+function renderCareerChart(player, statId, mode) {
+  if (player) _chartPlayer = player;
+  if (statId) _chartActiveStat = statId;
+  if (mode)   _chartMode = mode;
   if (!_chartPlayer) return;
 
-  const stat = CHART_STATS.find(s => s.id === _chartActiveStat) || CHART_STATS[0];
-  const p = _chartPlayer;
+  const stat   = CHART_STATS.find(s => s.id === _chartActiveStat) || CHART_STATS[0];
+  const points = getChartPoints(_chartPlayer, _chartActiveStat, _chartMode);
 
-  // Build season data points
-  const seasons = Object.keys(p.seasons).sort(seasonSort);
-  const points = seasons.map(s => {
-    const ss = p.seasons[s];
-    const val = stat.id === 'rc_pa' ? ss.rc_pa : ss[stat.id];
-    return { label: seasonLabel(s), val: (val !== null && val !== undefined && !isNaN(val)) ? val : null };
-  }).filter(pt => pt.val !== null);
+  const wrap = document.getElementById('careerChartWrap');
+  if (!wrap) return;
 
   if (points.length < 2) {
-    document.getElementById('careerChartWrap').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Not enough seasons to chart</div>';
+    wrap.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Not enough seasons to chart</div>';
     return;
   }
 
-  const W = document.getElementById('careerChartWrap').clientWidth || 600;
-  const H = 220;
-  const PAD = { top: 24, right: 20, bottom: 44, left: 44 };
+  const W      = wrap.clientWidth || 600;
+  const H      = 230;
+  const PAD    = { top:24, right:20, bottom:56, left:44 };
   const chartW = W - PAD.left - PAD.right;
-  const chartH = H - PAD.top - PAD.bottom;
+  const chartH = H - PAD.top  - PAD.bottom;
 
-  const vals = points.map(p => p.val);
-  const minV = Math.min(...vals);
-  const maxV = Math.max(...vals);
-  const range = maxV - minV || 1;
-  const padV = range * 0.15;
-  const lo = minV - padV, hi = maxV + padV;
+  const vals   = points.map(p => p.val);
+  const minV   = Math.min(...vals);
+  const maxV   = Math.max(...vals);
+  const range  = maxV - minV || 1;
+  const padV   = range * 0.15;
+  const rawLo  = minV - padV;
+  const lo     = stat.zeroFloor ? Math.max(0, rawLo) : rawLo;
+  const hi     = maxV + padV;
 
   const xOf = i => PAD.left + (i / (points.length - 1)) * chartW;
-  const yOf = v => PAD.top + chartH - ((v - lo) / (hi - lo)) * chartH;
+  const yOf = v => PAD.top  + chartH - ((v - lo) / (hi - lo)) * chartH;
 
-  // Build SVG path
-  const linePts = points.map((pt, i) => `${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(pt.val).toFixed(1)}`).join(' ');
+  const linePts   = points.map((pt,i) => `${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(pt.val).toFixed(1)}`).join(' ');
   const areaClose = `L${xOf(points.length-1).toFixed(1)},${(PAD.top+chartH).toFixed(1)} L${PAD.left.toFixed(1)},${(PAD.top+chartH).toFixed(1)} Z`;
 
-  // Y-axis ticks (4-5 ticks)
   const tickCount = 4;
-  const yTicks = Array.from({length: tickCount+1}, (_,i) => lo + (i/tickCount)*(hi-lo));
+  const yTicks = Array.from({length:tickCount+1}, (_,i) => lo + (i/tickCount)*(hi-lo));
 
-  // X labels
   const maxLabels = Math.min(points.length, 8);
-  const step = Math.ceil(points.length / maxLabels);
+  const step      = Math.ceil(points.length / maxLabels);
+  const xLabelY   = PAD.top + chartH + 22;
 
-  let svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:Inter,sans-serif;overflow:visible">
+  const svg = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:Inter,sans-serif;overflow:visible">
     <defs>
       <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#1a5c2e" stop-opacity="0.18"/>
@@ -1835,55 +1887,57 @@ function renderCareerChart(player, statId) {
       </linearGradient>
       <clipPath id="chartClip"><rect x="${PAD.left}" y="${PAD.top}" width="${chartW}" height="${chartH}"/></clipPath>
     </defs>
-
-    <!-- grid lines -->
     ${yTicks.map(v => `<line x1="${PAD.left}" x2="${PAD.left+chartW}" y1="${yOf(v).toFixed(1)}" y2="${yOf(v).toFixed(1)}" stroke="#d0dbd2" stroke-width="1" stroke-dasharray="4,3"/>`).join('')}
-
-    <!-- area fill -->
     <path d="${linePts} ${areaClose}" fill="url(#cg)" clip-path="url(#chartClip)"/>
-
-    <!-- line -->
     <path d="${linePts}" fill="none" stroke="#1a5c2e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" clip-path="url(#chartClip)"/>
-
-    <!-- dots + tooltips -->
-    ${points.map((pt, i) => `
-      <circle cx="${xOf(i).toFixed(1)}" cy="${yOf(pt.val).toFixed(1)}" r="4.5" fill="#1a5c2e" stroke="white" stroke-width="1.5">
-        <title>${pt.label}: ${stat.fmt(pt.val)}</title>
-      </circle>`).join('')}
-
-    <!-- Y axis labels -->
+    ${points.map((pt,i) => `<circle cx="${xOf(i).toFixed(1)}" cy="${yOf(pt.val).toFixed(1)}" r="4.5" fill="#1a5c2e" stroke="white" stroke-width="1.5"><title>${pt.label}: ${stat.fmt(pt.val)}</title></circle>`).join('')}
     ${yTicks.map(v => `<text x="${PAD.left-6}" y="${(yOf(v)+4).toFixed(1)}" text-anchor="end" font-size="10" fill="#6b7c6e">${stat.fmt(v)}</text>`).join('')}
-
-    <!-- X axis labels -->
-    ${points.map((pt, i) => i % step === 0 || i === points.length-1 ? `<text x="${xOf(i).toFixed(1)}" y="${(PAD.top+chartH+16).toFixed(1)}" text-anchor="middle" font-size="10" fill="#6b7c6e" transform="rotate(-30,${xOf(i).toFixed(1)},${(PAD.top+chartH+16).toFixed(1)})">${pt.label.replace(' 20','\u2019')}</text>` : '').join('')}
-
-    <!-- axes -->
+    ${points.map((pt,i) => (i%step===0||i===points.length-1) ? `<text x="${xOf(i).toFixed(1)}" y="${xLabelY}" text-anchor="middle" font-size="10" fill="#6b7c6e" transform="rotate(-35,${xOf(i).toFixed(1)},${xLabelY})">${pt.label.replace(' 20','’')}</text>` : '').join('')}
     <line x1="${PAD.left}" x2="${PAD.left}" y1="${PAD.top}" y2="${PAD.top+chartH}" stroke="#d0dbd2" stroke-width="1"/>
     <line x1="${PAD.left}" x2="${PAD.left+chartW}" y1="${PAD.top+chartH}" y2="${PAD.top+chartH}" stroke="#d0dbd2" stroke-width="1"/>
   </svg>`;
 
-  document.getElementById('careerChartWrap').innerHTML = svg;
+  wrap.innerHTML = svg;
 }
 
 function buildCareerChart(p) {
   const wrap = document.getElementById('profile-career');
   if (!wrap) return;
 
-  const btns = CHART_STATS.map(s =>
-    `<div class="chart-stat-btn${s.id===_chartActiveStat?' active':''}" onclick="renderCareerChart(null,'${s.id}');document.querySelectorAll('.chart-stat-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">${s.label}</div>`
+  const modeBtns = [
+    {id:'season', label:'By Season'},
+    {id:'career', label:'Cumulative Career'}
+  ].map(m => `<div class="chart-stat-btn" id="chartMode-${m.id}"
+      style="${m.id===_chartMode?'background:var(--gold);color:var(--dark);border-color:var(--gold)':''}"
+      onclick="
+        _chartMode='${m.id}';
+        document.querySelectorAll('[id^=chartMode-]').forEach(function(b){b.style.background='';b.style.color='';b.style.borderColor='';});
+        this.style.background='var(--gold)';this.style.color='var(--dark)';this.style.borderColor='var(--gold)';
+        renderCareerChart();
+      ">${m.label}</div>`
+  ).join('');
+
+  const statBtns = CHART_STATS.map(s =>
+    `<div class="chart-stat-btn${s.id===_chartActiveStat?' active':''}" id="chartStat-${s.id}"
+      onclick="
+        _chartActiveStat='${s.id}';
+        document.querySelectorAll('[id^=chartStat-]').forEach(function(b){b.classList.remove('active');});
+        this.classList.add('active');
+        renderCareerChart();
+      ">${s.label}</div>`
   ).join('');
 
   const chartCard = `<div class="card" style="margin-bottom:14px">
     <div class="card-header">Career Trend</div>
     <div class="card-body">
-      <div class="chart-stat-row">${btns}</div>
+      <div class="chart-stat-row" style="margin-bottom:8px">${modeBtns}</div>
+      <div class="chart-stat-row">${statBtns}</div>
       <div id="careerChartWrap" class="chart-container"></div>
     </div>
   </div>`;
 
-  // Insert before the career batting card
   wrap.innerHTML = chartCard + wrap.innerHTML;
-  renderCareerChart(p, _chartActiveStat);
+  renderCareerChart(p, _chartActiveStat, _chartMode);
 }
 
 // ---- Leaderboard ----
