@@ -1925,18 +1925,18 @@ function switchProfileTab(name, el) {
 
 // ---- Career Chart ----
 const CHART_STATS = [
-  { id:'avg',   label:'AVG',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'obp',   label:'OBP',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'slg',   label:'SLG',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'ops',   label:'OPS',   zeroFloor:true,  fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
-  { id:'d',     label:'2B',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'t',     label:'3B',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'hr',    label:'HR',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'bb',    label:'BB',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'r',     label:'RS',    zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'rbi',   label:'RBI',   zeroFloor:true,  fmt: v => v!=null ? Math.round(v).toString() : null },
-  { id:'rc',    label:'RC',    zeroFloor:false, fmt: v => v!=null ? v.toFixed(1) : null },
-  { id:'rc_pa', label:'RC/PA', zeroFloor:false, fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'avg',   label:'AVG',   zeroFloor:true,  ceiling:1,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'obp',   label:'OBP',   zeroFloor:true,  ceiling:1,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'slg',   label:'SLG',   zeroFloor:true,  ceiling:4,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'ops',   label:'OPS',   zeroFloor:true,  ceiling:5,    fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
+  { id:'d',     label:'2B',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'t',     label:'3B',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'hr',    label:'HR',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'bb',    label:'BB',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'r',     label:'RS',    zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'rbi',   label:'RBI',   zeroFloor:true,  ceiling:null, fmt: v => v!=null ? Math.round(v).toString() : null },
+  { id:'rc',    label:'RC',    zeroFloor:false, ceiling:null, fmt: v => v!=null ? v.toFixed(1) : null },
+  { id:'rc_pa', label:'RC/PA', zeroFloor:false, ceiling:null, fmt: v => v!=null ? v.toFixed(3).replace(/^0/,'') : null },
 ];
 let _chartActiveStat = 'avg';
 let _chartMode = 'season'; // 'season' or 'career'
