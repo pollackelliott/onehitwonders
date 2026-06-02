@@ -25,6 +25,7 @@
   --radius: 10px;
   --shadow: 0 2px 12px rgba(0,0,0,0.08);
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --nav-offset: 104px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -503,7 +504,7 @@ td:first-child:hover { text-decoration: underline; }
 
 .profile-sticky {
   position: fixed;
-  top: 122px;
+  top: var(--nav-offset, 104px);
   left: 0; right: 0;
   z-index: 50;
   background: var(--green);
@@ -1531,7 +1532,7 @@ function openPlayerProfile(name) {
     if (window._profileObserver) window._profileObserver.disconnect();
     var obs = new IntersectionObserver(function(entries) {
       _s.classList.toggle('visible', !entries[0].isIntersecting);
-    }, { rootMargin: '-122px 0px 0px 0px' });
+    }, { rootMargin: '-' + (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-offset')) || 104) + 'px 0px 0px 0px' });
     obs.observe(_h);
     window._profileObserver = obs;
   })();
@@ -1853,6 +1854,16 @@ async function init() {
     renderSchedule();
     setProgress(100);
     setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 300);
+  // Measure actual nav height and set CSS variable
+  (function() {
+    var h = document.querySelector('.site-header');
+    var n = document.querySelector('.nav-bar');
+    if (h && n) {
+      var offset = h.offsetHeight + n.offsetHeight;
+      document.documentElement.style.setProperty('--nav-offset', offset + 'px');
+    }
+  })();
+
   } catch(err) {
     console.error(err);
     document.getElementById('loadingScreen').style.display = 'none';
@@ -1877,7 +1888,7 @@ async function init() {
       var el = document.createElement('div');
       el.style.cssText = 'position:fixed;z-index:35;overflow:hidden;display:none;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.15);';
       var t = document.createElement('table');
-      t.style.cssText = 'border-collapse:collapse;font-size:12px;white-space:nowrap;';
+      t.style.cssText = 'border-collapse:collapse;font-size:12px;white-space:nowrap;table-layout:fixed;';
       t.appendChild(thead.cloneNode(true));
       el.appendChild(t);
       document.body.appendChild(el);
@@ -1887,8 +1898,9 @@ async function init() {
 
   function getStickyTop() {
     var ps = document.getElementById('profileSticky');
-    if (ps && ps.classList.contains('visible')) return 122 + ps.offsetHeight;
-    return 122;
+    var base = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-offset')) || 104;
+    if (ps && ps.classList.contains('visible')) return base + ps.offsetHeight;
+    return base;
   }
 
   function sync() {
@@ -1910,10 +1922,19 @@ async function init() {
       c.el.style.top = top + 'px';
       c.el.style.left = wr.left + 'px';
       c.el.style.width = wr.width + 'px';
+      // Sync total table width + per-column widths using getBoundingClientRect for accuracy
+      var origTable = c.wrap.querySelector('table');
+      if (origTable) c.table.style.width = origTable.scrollWidth + 'px';
+      c.table.style.tableLayout = 'fixed';
       var origThs = c.thead.querySelectorAll('th');
       var copyThs = c.el.querySelectorAll('th');
       origThs.forEach(function(th, i) {
-        if (copyThs[i]) copyThs[i].style.width = th.offsetWidth + 'px';
+        if (copyThs[i]) {
+          var w = th.getBoundingClientRect().width;
+          copyThs[i].style.width = w + 'px';
+          copyThs[i].style.minWidth = w + 'px';
+          copyThs[i].style.maxWidth = w + 'px';
+        }
       });
       c.table.style.marginLeft = (-c.wrap.scrollLeft) + 'px';
     });
