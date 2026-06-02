@@ -359,9 +359,6 @@ thead th {
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
-  position: sticky;
-  top: 122px;
-  z-index: 10;
 }
 thead th:first-child { text-align: left; }
 thead th:hover { background: var(--green-mid); }
@@ -505,20 +502,22 @@ td:first-child:hover { text-decoration: underline; }
 .player-grid-wrap.hidden { display: none; }
 
 .profile-sticky {
-  position: sticky;
-  top: 122px; /* below site-header (60px) + nav-bar (62px) */
+  position: fixed;
+  top: 122px;
+  left: 0; right: 0;
   z-index: 50;
   background: var(--green);
   color: white;
-  padding: 8px 18px;
+  padding: 5px 20px;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px;
+  font-size: 16px;
   letter-spacing: 1px;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
 }
-.profile-sticky.visible { display: block; }
+.profile-sticky.visible { opacity: 1; pointer-events: auto; }
   background: linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%);
   border-radius: var(--radius);
   padding: 20px;
@@ -988,6 +987,7 @@ select, input {
   </div>
   <div class="player-profile" id="playerProfile">
     <div class="back-btn" onclick="closePlayerProfile()">← Back to Players</div>
+    <div class="profile-sticky" id="profileSticky"></div>
     <div class="profile-header" id="profileHeader"></div>
     <div class="profile-tabs">
       <div class="profile-tab active" onclick="switchProfileTab('career', this)">Career</div>
@@ -1446,6 +1446,7 @@ function renderSeasonContent(s) {
     </div>`;
   }
   document.getElementById('seasonContent').innerHTML = html;
+  if (window.rebuildStickyHeaders) window.rebuildStickyHeaders();
 }
 
 function openGameDetail(season, gameNum) {
@@ -1522,6 +1523,18 @@ function openPlayerProfile(name) {
   document.getElementById('playerGridWrap').classList.add('hidden');
   document.getElementById('playerProfile').classList.add('active');
   const seasonsPlayed = Object.keys(p.seasons).sort(seasonSort);
+
+  document.getElementById('profileSticky').textContent = name;
+  (function() {
+    var _h = document.getElementById('profileHeader');
+    var _s = document.getElementById('profileSticky');
+    if (window._profileObserver) window._profileObserver.disconnect();
+    var obs = new IntersectionObserver(function(entries) {
+      _s.classList.toggle('visible', !entries[0].isIntersecting);
+    }, { rootMargin: '-122px 0px 0px 0px' });
+    obs.observe(_h);
+    window._profileObserver = obs;
+  })();
 
   document.getElementById('profileHeader').innerHTML = `
     <div class="profile-avatar">${initials(name)}</div>
@@ -1606,11 +1619,15 @@ function openPlayerProfile(name) {
   document.querySelectorAll('.profile-section').forEach(s=>s.classList.remove('active'));
   document.querySelector('.profile-tab').classList.add('active');
   document.getElementById('profile-career').classList.add('active');
+  if (window.rebuildStickyHeaders) window.rebuildStickyHeaders();
 }
 
 function closePlayerProfile() {
   document.getElementById('playerProfile').classList.remove('active');
   document.getElementById('playerGridWrap').classList.remove('hidden');
+  var _s2 = document.getElementById('profileSticky');
+  if (_s2) _s2.classList.remove('visible');
+  if (window._profileObserver) { window._profileObserver.disconnect(); window._profileObserver = null; }
 
 }
 
@@ -1781,6 +1798,7 @@ function renderLeaderboard() {
     </tr>`;
   }).join('');
 }
+  if (window.rebuildStickyHeaders) window.rebuildStickyHeaders();
 
 // ---- Schedule ----
 function renderSchedule() {
@@ -1843,6 +1861,77 @@ async function init() {
     document.getElementById('errorScreen').classList.add('visible');
   }
 }
+
+// ---- Sticky table header clones ----
+// (position:sticky on thead th is broken when any ancestor has overflow-x:auto,
+//  because CSS forces overflow-y to auto too, creating a scroll container.)
+(function() {
+  var clones = [];
+
+  function buildClones() {
+    clones.forEach(function(c) { try { c.el.remove(); } catch(e){} });
+    clones = [];
+    document.querySelectorAll('.tbl-wrap').forEach(function(wrap) {
+      var thead = wrap.querySelector('thead');
+      if (!thead) return;
+      var el = document.createElement('div');
+      el.style.cssText = 'position:fixed;z-index:35;overflow:hidden;display:none;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,0.15);';
+      var t = document.createElement('table');
+      t.style.cssText = 'border-collapse:collapse;font-size:12px;white-space:nowrap;';
+      t.appendChild(thead.cloneNode(true));
+      el.appendChild(t);
+      document.body.appendChild(el);
+      clones.push({ el:el, table:t, wrap:wrap, thead:thead });
+    });
+  }
+
+  function getStickyTop() {
+    var ps = document.getElementById('profileSticky');
+    if (ps && ps.classList.contains('visible')) return 122 + ps.offsetHeight;
+    return 122;
+  }
+
+  function sync() {
+    var top = getStickyTop();
+    clones.forEach(function(c) {
+      if (!c.wrap.offsetParent && c.wrap.id !== 'lbTable') {
+        // skip if container is hidden (different view tab)
+        var viewParent = c.wrap.closest('.view, .profile-section');
+        if (viewParent && !viewParent.classList.contains('active')) {
+          c.el.style.display = 'none';
+          return;
+        }
+      }
+      var wr = c.wrap.getBoundingClientRect();
+      var tr = c.thead.getBoundingClientRect();
+      var show = tr.bottom < top + 2 && wr.bottom > top + 30;
+      c.el.style.display = show ? '' : 'none';
+      if (!show) return;
+      c.el.style.top = top + 'px';
+      c.el.style.left = wr.left + 'px';
+      c.el.style.width = wr.width + 'px';
+      var origThs = c.thead.querySelectorAll('th');
+      var copyThs = c.el.querySelectorAll('th');
+      origThs.forEach(function(th, i) {
+        if (copyThs[i]) copyThs[i].style.width = th.offsetWidth + 'px';
+      });
+      c.table.style.marginLeft = (-c.wrap.scrollLeft) + 'px';
+    });
+  }
+
+  window.addEventListener('scroll', sync, {passive:true});
+  window.addEventListener('resize', function() { buildClones(); sync(); });
+
+  window.rebuildStickyHeaders = function() {
+    buildClones();
+    document.querySelectorAll('.tbl-wrap').forEach(function(w) {
+      w.removeEventListener('scroll', sync);
+      w.addEventListener('scroll', sync, {passive:true});
+    });
+    requestAnimationFrame(function() { requestAnimationFrame(sync); });
+  };
+})();
+
 
 init();
 
