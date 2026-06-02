@@ -988,7 +988,6 @@ select, input {
   </div>
   <div class="player-profile" id="playerProfile">
     <div class="back-btn" onclick="closePlayerProfile()">← Back to Players</div>
-    <div class="profile-sticky" id="profileSticky"></div>
     <div class="profile-header" id="profileHeader"></div>
     <div class="profile-tabs">
       <div class="profile-tab active" onclick="switchProfileTab('career', this)">Career</div>
@@ -1524,18 +1523,6 @@ function openPlayerProfile(name) {
   document.getElementById('playerProfile').classList.add('active');
   const seasonsPlayed = Object.keys(p.seasons).sort(seasonSort);
 
-  document.getElementById('profileSticky').textContent = name;
-
-  // Show sticky name when profile header scrolls out of view
-  const header = document.getElementById('profileHeader');
-  const sticky = document.getElementById('profileSticky');
-  function onScroll() {
-    const rect = header.getBoundingClientRect();
-    sticky.classList.toggle('visible', rect.bottom < 122);
-  }
-  window._profileScrollHandler = onScroll;
-  window.addEventListener('scroll', onScroll);
-
   document.getElementById('profileHeader').innerHTML = `
     <div class="profile-avatar">${initials(name)}</div>
     <div>
@@ -1624,11 +1611,7 @@ function openPlayerProfile(name) {
 function closePlayerProfile() {
   document.getElementById('playerProfile').classList.remove('active');
   document.getElementById('playerGridWrap').classList.remove('hidden');
-  document.getElementById('profileSticky').classList.remove('visible');
-  if (window._profileScrollHandler) {
-    window.removeEventListener('scroll', window._profileScrollHandler);
-    window._profileScrollHandler = null;
-  }
+
 }
 
 function openOpponentView(opponent) {
