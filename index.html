@@ -1540,10 +1540,10 @@ function openGameDetail(season, gameNum) {
 
   const awayTeam = isOHWHome
     ? { name: game.opponent, line: oppLine, runs: game.opp, isOHW: false }
-    : { name: 'OHW', line: ohwLine, runs: game.ohw, isOHW: true };
+    : { name: 'One Hit Wonders', line: ohwLine, runs: game.ohw, isOHW: true };
 
   const homeTeam = isOHWHome
-    ? { name: 'OHW', line: ohwLine, runs: game.ohw, isOHW: true }
+    ? { name: 'One Hit Wonders', line: ohwLine, runs: game.ohw, isOHW: true }
     : { name: game.opponent, line: oppLine, runs: game.opp, isOHW: false };
 
   function lineScoreRunStyle(team) {
