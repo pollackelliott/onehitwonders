@@ -1568,14 +1568,11 @@ function openGameDetail(season, gameNum) {
   const lineScoreHtml = innings > 0
     ? `<div style="padding:16px 16px 0 16px">
         <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:white">
-          <div style="background:var(--green-pale);padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">
-            Line Score
-          </div>
           <div style="overflow-x:auto">
             <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">
               <thead>
                 <tr>
-                  <th style="padding:8px 10px;text-align:left;background:white;color:var(--muted)">Team</th>
+                  <th style="padding:8px 10px;background:white;"></th>
                   ${Array.from({length:innings},(_,i)=>`
                     <th style="padding:8px 10px;background:white;color:var(--muted)">${i+1}</th>
                   `).join('')}
