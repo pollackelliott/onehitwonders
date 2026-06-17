@@ -1186,7 +1186,10 @@ function processData(gbgRaw, schedRaw) {
       opponent: row['Opponent']||'',
       playoffs: row['Playoffs']||'No',
       ohw, opp, result,
-      overall:  parseInt(row['Overall Game Number'])||0
+      overall:  parseInt(row['Overall Game Number'])||0,
+      ohwLineScore: row['OHW Line Score'] || '',
+      oppLineScore: row['Opponent Line Score'] || '',
+      homeAway: row['HA'] || ''
     };
   }).filter(g => g.season);
 
@@ -1519,6 +1522,76 @@ function renderSeasonContent(s) {
 function openGameDetail(season, gameNum) {
   const game = RAW.schedule.find(g=>g.season===season&&g.game===gameNum);
   if (!game) return;
+
+  // Line scores are stored as exact inning strings, like "1|2|0|-|R".
+  // Keep each inning value as text so non-numeric values display exactly as entered.
+  const ohwLine = (game.ohwLineScore || '')
+    .split('|')
+    .map(x => x.trim())
+    .filter(x => x !== '');
+
+  const oppLine = (game.oppLineScore || '')
+    .split('|')
+    .map(x => x.trim())
+    .filter(x => x !== '');
+
+  const innings = Math.max(ohwLine.length, oppLine.length);
+  const isOHWHome = String(game.homeAway || '').trim().toUpperCase() === 'H';
+
+  const awayTeam = isOHWHome
+    ? { name: game.opponent, line: oppLine, runs: game.opp, isOHW: false }
+    : { name: 'OHW', line: ohwLine, runs: game.ohw, isOHW: true };
+
+  const homeTeam = isOHWHome
+    ? { name: 'OHW', line: ohwLine, runs: game.ohw, isOHW: true }
+    : { name: game.opponent, line: oppLine, runs: game.opp, isOHW: false };
+
+  function lineScoreRunStyle(team) {
+    if (game.result === 'T' || game.result === null) return '';
+    const won = team.isOHW ? game.result === 'W' : game.result === 'L';
+    if (!won) return '';
+    return team.isOHW
+      ? 'font-weight:700;color:var(--green);'
+      : 'font-weight:700;color:var(--dark);';
+  }
+
+  function lineScoreRow(team) {
+    return `<tr>
+      <td style="padding:8px 10px;text-align:left;font-weight:600;color:var(--dark);font-family:'Inter',sans-serif;white-space:nowrap">${team.name}</td>
+      ${Array.from({length:innings},(_,i)=>`
+        <td style="padding:8px 10px;color:var(--dark);font-family:'DM Mono',monospace">${team.line[i] ?? ''}</td>
+      `).join('')}
+      <td style="padding:8px 10px;font-family:'DM Mono',monospace;border-left:1px solid var(--border);${lineScoreRunStyle(team)}">${team.runs ?? ''}</td>
+    </tr>`;
+  }
+
+  const lineScoreHtml = innings > 0
+    ? `<div style="padding:16px 16px 0 16px">
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:white">
+          <div style="background:var(--green-pale);padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">
+            Line Score
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">
+              <thead>
+                <tr>
+                  <th style="padding:8px 10px;text-align:left;background:white;color:var(--muted)">Team</th>
+                  ${Array.from({length:innings},(_,i)=>`
+                    <th style="padding:8px 10px;background:white;color:var(--muted)">${i+1}</th>
+                  `).join('')}
+                  <th style="padding:8px 10px;background:white;color:var(--muted);border-left:1px solid var(--border)">R</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${lineScoreRow(awayTeam)}
+                ${lineScoreRow(homeTeam)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`
+    : '';
+
   const gamePlayers = [];
   for (const [name,pd] of Object.entries(RAW.players)) {
     const entry = pd.gameLogs.find(l=>l.season===season&&l.game===gameNum);
@@ -1542,9 +1615,10 @@ function openGameDetail(season, gameNum) {
       </div>
       <div style="text-align:right">
         <div style="font-family:'Bebas Neue';font-size:32px">${scoreHtml}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.6)">${game.result==='W'?'Win':game.result==='L'?'Loss':'Tie'}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6)">${game.result==='W'?'Win':game.result==='L'?'Loss':game.result==='T'?'Tie':'Upcoming'}</div>
       </div>
     </div>
+    ${lineScoreHtml}
     <div style="padding:16px;overflow-x:auto">
       ${gamePlayers.length ? `<table style="width:100%">
         <thead><tr><th>Player</th><th>AB</th><th>H</th><th>AVG</th><th>OBP</th><th>OPS</th><th>PA</th><th>R</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>K</th><th>RC</th></tr></thead>
