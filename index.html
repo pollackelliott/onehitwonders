@@ -1058,6 +1058,36 @@ select, input {
   <button onclick="location.reload()" style="margin-top:8px;padding:10px 28px;background:var(--green);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Retry</button>
 </div>
 
+<script>
+(function() {
+  window.__OHW_DONE = false;
+  window.__ohwShowStartupError = function(message) {
+    window.__OHW_DONE = true;
+    var loading = document.getElementById('loadingScreen');
+    var error = document.getElementById('errorScreen');
+    var msg = document.getElementById('errorMsg');
+    if (loading) loading.style.display = 'none';
+    if (msg) msg.textContent = message || 'The app could not finish loading.';
+    if (error) error.classList.add('visible');
+  };
+
+  var bar = document.getElementById('loadingBar');
+  if (bar) bar.style.width = '5%';
+
+  window.onerror = function(message) {
+    if (!window.__OHW_DONE) {
+      window.__ohwShowStartupError('Startup error: ' + message);
+    }
+  };
+
+  window.setTimeout(function() {
+    if (!window.__OHW_DONE) {
+      window.__ohwShowStartupError('Loading took too long. Please retry; if it happens again, the data source may be blocked.');
+    }
+  }, 25000);
+})();
+</script>
+
 <header class="site-header">
   <div class="site-logo" onclick="showView('home')">
     <div class="logo-badge">OHW</div>
@@ -2745,6 +2775,7 @@ async function fetchCSV(url) {
 }
 
 function hideLoadingScreen() {
+  window.__OHW_DONE = true;
   const screen = document.getElementById('loadingScreen');
   if (!screen) return;
   screen.classList.add('hidden');
@@ -2785,10 +2816,15 @@ async function init() {
 
   } catch(err) {
     console.error(err);
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('errorMsg').textContent =
-      'Could not load stats from Google Sheets. (' + err.message + ')';
-    document.getElementById('errorScreen').classList.add('visible');
+    const message = 'Could not load stats from Google Sheets. (' + err.message + ')';
+    if (window.__ohwShowStartupError) {
+      window.__ohwShowStartupError(message);
+    } else {
+      window.__OHW_DONE = true;
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('errorMsg').textContent = message;
+      document.getElementById('errorScreen').classList.add('visible');
+    }
   }
 }
 
@@ -2859,4 +2895,22 @@ async function init() {
     });
   }
 
-  window.addEventListener('scroll', sync, {p
+  window.addEventListener('scroll', sync, {passive:true});
+  window.addEventListener('resize', function() { buildClones(); sync(); });
+
+  window.rebuildStickyHeaders = function() {
+    buildClones();
+    document.querySelectorAll('.tbl-wrap').forEach(function(w) {
+      w.removeEventListener('scroll', sync);
+      w.addEventListener('scroll', sync, {passive:true});
+    });
+    requestAnimationFrame(function() { requestAnimationFrame(sync); });
+  };
+})();
+
+
+init();
+
+</script>
+</body>
+</html>
