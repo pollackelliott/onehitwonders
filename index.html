@@ -734,9 +734,18 @@ td.nc:hover { text-decoration: underline; }
   outline: none;
 }
 .control-row select:focus, .control-row input:focus { border-color: var(--green); }
+#view-schedule .control-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  align-items: center;
+}
+#view-schedule .control-row label { flex: 0 0 auto; white-space: nowrap; }
+#view-schedule .control-row select { flex: 0 0 auto; min-width: max-content; }
+#view-schedule #schedOpponentFilter { max-width: 260px; }
+#view-schedule #schedRecord { flex: 0 0 auto; white-space: nowrap; margin-left: auto !important; }
 .compare-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 10px;
   margin-bottom: 16px;
   min-width: 0;
@@ -750,27 +759,36 @@ td.nc:hover { text-decoration: underline; }
   overflow: hidden;
 }
 .compare-card .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-.compare-card .stat-box { min-width: 0; }
+.compare-card .stat-box { min-width: 0; overflow: hidden; }
+.compare-card .stat-box .label,
+.compare-card .stat-box .value { white-space: nowrap; }
 .compare-name {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 20px;
   color: var(--green);
   letter-spacing: 0.8px;
   margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .compare-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
 #view-compare .control-row select { flex: 1 1 150px; min-width: 0; }
 .compare-table {
-  table-layout: fixed;
-  min-width: 0;
+  table-layout: auto;
+  min-width: max(640px, 100%);
 }
 .compare-table th,
 .compare-table td {
-  min-width: 76px;
-  white-space: normal;
-  word-break: break-word;
+  min-width: 112px;
+  white-space: nowrap;
+  word-break: normal;
 }
-.compare-table .stat-col { width: 150px; }
+.compare-table .stat-col {
+  min-width: 150px;
+  width: 150px;
+}
+.compare-table td:first-child { white-space: nowrap; }
 .leader-cell {
   background: #e7f4ea;
   color: #1f6f3c;
@@ -1036,9 +1054,9 @@ select, input {
   <div class="nav-tab" onclick="showView('seasons')" id="tab-seasons">Seasons</div>
   <div class="nav-tab" onclick="showView('players')" id="tab-players">Players</div>
   <div class="nav-tab" onclick="showView('leaderboard')" id="tab-leaderboard">Leaderboards</div>
-  <div class="nav-tab" onclick="showView('compare')" id="tab-compare">Comparisons</div>
   <div class="nav-tab" onclick="showView('records')" id="tab-records">Records</div>
   <div class="nav-tab" onclick="showView('schedule')" id="tab-schedule">Schedule</div>
+  <div class="nav-tab" onclick="showView('compare')" id="tab-compare">Comparisons</div>
 </nav>
 
 <!-- HOME -->
@@ -1324,6 +1342,10 @@ function trimPossibleTotal(line, runs) {
   return line;
 }
 
+function lineRunsTotal(line) {
+  return line.reduce((sum, value) => sum + inningRuns(value), 0);
+}
+
 function detectWalkoff(game) {
   if (!game || game.result === null || game.result === 'T') return false;
   const ohwHome = String(game.homeAway || '').trim().toUpperCase() === 'H';
@@ -1332,6 +1354,8 @@ function detectWalkoff(game) {
 
   const ohwLine = trimPossibleTotal(splitLineScore(game.ohwLineScore), game.ohw);
   const oppLine = trimPossibleTotal(splitLineScore(game.oppLineScore), game.opp);
+  if (lineRunsTotal(ohwLine) !== game.ohw || lineRunsTotal(oppLine) !== game.opp) return false;
+
   const homeLine = ohwHome ? ohwLine : oppLine;
   const awayLine = ohwHome ? oppLine : ohwLine;
   if (!homeLine.length || !awayLine.length) return false;
@@ -1339,11 +1363,14 @@ function detectWalkoff(game) {
   const finalIdx = Math.max(homeLine.length, awayLine.length) - 1;
   if (finalIdx < 0) return false;
 
-  const awayThroughFinal = awayLine.slice(0, finalIdx + 1).reduce((s,v) => s + inningRuns(v), 0);
-  const homeBeforeFinal = homeLine.slice(0, finalIdx).reduce((s,v) => s + inningRuns(v), 0);
-  const homeAfterFinal = homeBeforeFinal + inningRuns(homeLine[finalIdx]);
+  const homeFinalRuns = inningRuns(homeLine[finalIdx]);
+  if (homeFinalRuns <= 0) return false;
 
-  return homeBeforeFinal <= awayThroughFinal && homeAfterFinal > awayThroughFinal;
+  const awayFinalTotal = awayLine.slice(0, finalIdx + 1).reduce((s,v) => s + inningRuns(v), 0);
+  const homeBeforeFinal = homeLine.slice(0, finalIdx).reduce((s,v) => s + inningRuns(v), 0);
+  const homeAfterFinal = homeBeforeFinal + homeFinalRuns;
+
+  return homeBeforeFinal <= awayFinalTotal && homeAfterFinal > awayFinalTotal;
 }
 
 function buildDataIndexes(data) {
