@@ -713,6 +713,100 @@ td.nc:hover { text-decoration: underline; }
   outline: none;
 }
 
+.control-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: white;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+.control-row label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.control-row select, .control-row input {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  background: white;
+  outline: none;
+}
+.control-row select:focus, .control-row input:focus { border-color: var(--green); }
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+.compare-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+.compare-card .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.compare-card .stat-box { min-width: 0; }
+.compare-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  color: var(--green);
+  letter-spacing: 0.8px;
+  margin-bottom: 3px;
+}
+.compare-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+#view-compare .control-row select { flex: 1 1 150px; min-width: 0; }
+.compare-table {
+  table-layout: fixed;
+  min-width: 0;
+}
+.compare-table th,
+.compare-table td {
+  min-width: 76px;
+  white-space: normal;
+  word-break: break-word;
+}
+.compare-table .stat-col { width: 150px; }
+.leader-cell {
+  background: #e7f4ea;
+  color: #1f6f3c;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px rgba(43,119,62,0.16);
+}
+.record-section { margin-bottom: 18px; }
+.record-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.record-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+}
+.record-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  color: var(--green);
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.record-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+.record-row:first-of-type { border-top: none; }
+.record-rank { width: 24px; font-family: 'DM Mono', monospace; color: var(--muted); font-size: 11px; }
+.record-name { flex: 1; min-width: 0; font-weight: 600; cursor: pointer; }
+.record-name:hover { color: var(--green); }
+.record-val { font-family: 'DM Mono', monospace; color: var(--green); font-weight: 500; }
+.tag-walkoff { background: var(--gold-pale); color: #8a6500; border-radius: 4px; padding: 1px 5px; font-size: 9px; font-weight: 700; margin-left: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+.mini-note { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
 .lb-podium {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -942,6 +1036,8 @@ select, input {
   <div class="nav-tab" onclick="showView('seasons')" id="tab-seasons">Seasons</div>
   <div class="nav-tab" onclick="showView('players')" id="tab-players">Players</div>
   <div class="nav-tab" onclick="showView('leaderboard')" id="tab-leaderboard">Leaderboards</div>
+  <div class="nav-tab" onclick="showView('compare')" id="tab-compare">Comparisons</div>
+  <div class="nav-tab" onclick="showView('records')" id="tab-records">Records</div>
   <div class="nav-tab" onclick="showView('schedule')" id="tab-schedule">Schedule</div>
 </nav>
 
@@ -1077,12 +1173,49 @@ select, input {
   </div>
 </div>
 
+<!-- COMPARE -->
+<div class="view" id="view-compare">
+  <div class="control-row">
+    <label>Players:</label>
+    <select id="comparePlayer1" onchange="renderCompare()"></select>
+    <select id="comparePlayer2" onchange="renderCompare()"></select>
+    <select id="comparePlayer3" onchange="renderCompare()"></select>
+    <select id="comparePlayer4" onchange="renderCompare()"></select>
+  </div>
+  <div id="compareContent"></div>
+</div>
+
+<!-- RECORDS -->
+<div class="view" id="view-records">
+  <div id="recordsContent"></div>
+</div>
+
 <!-- SCHEDULE -->
 <div class="view" id="view-schedule">
-  <div class="lb-filter-row" style="margin-bottom:16px;">
+  <div class="control-row">
     <label>Season:</label>
     <select id="schedSeasonFilter" onchange="renderSchedule()">
       <option value="all">All Time</option>
+    </select>
+    <label>Opponent:</label>
+    <select id="schedOpponentFilter" onchange="renderSchedule()">
+      <option value="all">All Opponents</option>
+    </select>
+    <label>Result:</label>
+    <select id="schedResultFilter" onchange="renderSchedule()">
+      <option value="all">All Results</option>
+      <option value="W">Wins</option>
+      <option value="L">Losses</option>
+      <option value="T">Ties</option>
+      <option value="U">Upcoming</option>
+    </select>
+    <label>Type:</label>
+    <select id="schedTypeFilter" onchange="renderSchedule()">
+      <option value="all">All Games</option>
+      <option value="playoffs">Playoffs</option>
+      <option value="walkoff">Walkoffs</option>
+      <option value="close">Close Games</option>
+      <option value="blowout">Blowouts</option>
     </select>
     <div style="margin-left:auto;font-family:'DM Mono',monospace;font-size:13px;" id="schedRecord"></div>
   </div>
@@ -1101,7 +1234,11 @@ let OGN_MAP = {};        // season+game -> overall game number, for chronologica
 const CORE_MIN_GP = 0;
 const CORE_EXTRAS = [];
 const MIN_AB_RATE = 50;
+const RECORD_RATE_MIN_AB = 10;
+const FETCH_TIMEOUT_MS = 15000;
 let RAW = null;
+const NEXT_HIT_MILESTONES = [50,75,100,150,200,250,300,400,500];
+const NEXT_HR_MILESTONES  = [10,15,20,25,50];
 
 // ---- CSV parser ----
 function parseCSV(text) {
@@ -1167,6 +1304,84 @@ function calcStats(row) {
   return { ab, h, bb, sf, r, rbi, d, t, hr, k, pa, avg, obp, slg, ops, rc };
 }
 
+function splitLineScore(v) {
+  return String(v || '')
+    .split('|')
+    .map(x => x.trim())
+    .filter(x => x !== '');
+}
+
+function inningRuns(v) {
+  if (v === undefined || v === null || v === '' || v === '-') return 0;
+  const n = parseInt(v, 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function trimPossibleTotal(line, runs) {
+  if (line.length <= 1) return line;
+  const last = line[line.length - 1];
+  if (/^\d+$/.test(last) && parseInt(last, 10) === runs) return line.slice(0, -1);
+  return line;
+}
+
+function detectWalkoff(game) {
+  if (!game || game.result === null || game.result === 'T') return false;
+  const ohwHome = String(game.homeAway || '').trim().toUpperCase() === 'H';
+  const homeWon = ohwHome ? game.result === 'W' : game.result === 'L';
+  if (!homeWon) return false;
+
+  const ohwLine = trimPossibleTotal(splitLineScore(game.ohwLineScore), game.ohw);
+  const oppLine = trimPossibleTotal(splitLineScore(game.oppLineScore), game.opp);
+  const homeLine = ohwHome ? ohwLine : oppLine;
+  const awayLine = ohwHome ? oppLine : ohwLine;
+  if (!homeLine.length || !awayLine.length) return false;
+
+  const finalIdx = Math.max(homeLine.length, awayLine.length) - 1;
+  if (finalIdx < 0) return false;
+
+  const awayThroughFinal = awayLine.slice(0, finalIdx + 1).reduce((s,v) => s + inningRuns(v), 0);
+  const homeBeforeFinal = homeLine.slice(0, finalIdx).reduce((s,v) => s + inningRuns(v), 0);
+  const homeAfterFinal = homeBeforeFinal + inningRuns(homeLine[finalIdx]);
+
+  return homeBeforeFinal <= awayThroughFinal && homeAfterFinal > awayThroughFinal;
+}
+
+function buildDataIndexes(data) {
+  const idx = {
+    gamesBySeason: {},
+    gamesByOpponent: {},
+    playersBySeason: {},
+    playerLogsByPlayer: {},
+    playedGames: [],
+    walkoffs: [],
+    singleGameRows: [],
+  };
+
+  data.schedule.forEach(g => {
+    (idx.gamesBySeason[g.season] ||= []).push(g);
+    (idx.gamesByOpponent[g.opponent] ||= []).push(g);
+    if (g.result !== null) idx.playedGames.push(g);
+    if (g.walkoff) idx.walkoffs.push(g);
+  });
+  Object.values(idx.gamesBySeason).forEach(games => games.sort((a,b)=>a.game-b.game));
+  Object.values(idx.gamesByOpponent).forEach(games => games.sort((a,b)=>a.overall-b.overall));
+
+  for (const [name, p] of Object.entries(data.players)) {
+    idx.playerLogsByPlayer[name] = [...p.gameLogs].sort((a,b) => (OGN_MAP[a.season+'-'+a.game]||0) - (OGN_MAP[b.season+'-'+b.game]||0));
+    for (const [season, ss] of Object.entries(p.seasons)) {
+      (idx.playersBySeason[season] ||= []).push({ name, ...ss });
+    }
+    for (const g of p.gameLogs) {
+      if (!g.played || !g.raw) continue;
+      const sched = data.schedMap[g.season+'-'+g.game];
+      idx.singleGameRows.push({ name, season:g.season, game:g.game, sched, mvp:g.mvp, ...g.raw });
+    }
+  }
+  Object.values(idx.playersBySeason).forEach(rows => rows.sort((a,b)=>(b.avg??-99)-(a.avg??-99)));
+  idx.singleGameRows.sort((a,b)=>(b.rc||0)-(a.rc||0));
+  return idx;
+}
+
 // ---- Data processing ----
 function processData(gbgRaw, schedRaw) {
   const gbgRows   = csvToObjects(gbgRaw);
@@ -1179,7 +1394,7 @@ function processData(gbgRaw, schedRaw) {
     const ohw    = unplayed ? null : (nv(ohwRaw) || 0);
     const opp    = unplayed ? null : (nv(oppRaw) || 0);
     const result = unplayed ? null : ohw > opp ? 'W' : ohw < opp ? 'L' : 'T';
-    return {
+    const game = {
       season:   (row['Season']||'').toUpperCase().trim(),
       game:     parseInt(row['Game Number'])||0,
       date:     row['Date']||'',
@@ -1191,6 +1406,8 @@ function processData(gbgRaw, schedRaw) {
       oppLineScore: row['Opponent Line Score'] || '',
       homeAway: row['HA'] || ''
     };
+    game.walkoff = detectWalkoff(game);
+    return game;
   }).filter(g => g.season);
 
   // Build OGN_MAP and schedMap for quick lookups
@@ -1331,7 +1548,9 @@ function processData(gbgRaw, schedRaw) {
   let w=0, l=0, t=0;
   for (const sr of Object.values(seasonRecords)) { w+=sr.w; l+=sr.l; t+=sr.t; }
 
-  return { schedule, schedMap, seasonRecords, players:corePlayers, allTimeRecord:{w,l,t} };
+  const data = { schedule, schedMap, seasonRecords, players:corePlayers, allTimeRecord:{w,l,t} };
+  data.indexes = buildDataIndexes(data);
+  return data;
 }
 
 // ---- Helpers ----
@@ -1359,6 +1578,12 @@ function fmtNum(n, dec=0) {
   return Math.round(n).toLocaleString('en-US');
 }
 function esc(s) { return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function h(s) {
+  return String(s ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+}
+function attr(s) { return h(s).replace(/`/g, '&#96;'); }
 
 // ---- Navigation ----
 function showView(name) {
@@ -1382,7 +1607,7 @@ function renderHome() {
     document.getElementById(id).innerHTML = sorted.slice(0,5).map(([n,p],i) =>
       `<div class="mini-leader-row">
         <div class="mini-rank">${i+1}</div>
-        <div class="mini-name" onclick="openPlayerProfile('${esc(n)}')">${n}</div>
+        <div class="mini-name" onclick="openPlayerProfile('${esc(n)}')">${h(n)}</div>
         <div class="mini-val">${valFn(p)}</div>
       </div>`).join('');
   }
@@ -1398,13 +1623,13 @@ function renderHome() {
   const leftCol = streakTop.slice(0,5).map(([n,p],i) =>
     `<div class="mini-leader-row" style="padding:6px 0">
       <div class="mini-rank">${i+1}</div>
-      <div class="mini-name" onclick="openPlayerProfile('${esc(n)}')">${n}</div>
+      <div class="mini-name" onclick="openPlayerProfile('${esc(n)}')">${h(n)}</div>
       <div class="mini-val">${p.hit_streak}</div>
     </div>`).join('');
   const rightCol = streakTop.slice(5,10).map(([n,p],i) =>
     `<div class="mini-leader-row" style="padding:6px 0">
       <div class="mini-rank">${i+6}</div>
-      <div class="mini-name" onclick="openPlayerProfile('${esc(n)}')">${n}</div>
+      <div class="mini-name" onclick="openPlayerProfile('${esc(n)}')">${h(n)}</div>
       <div class="mini-val">${p.hit_streak}</div>
     </div>`).join('');
   document.getElementById('homeStreakLeaders').innerHTML =
@@ -1449,6 +1674,33 @@ function selectSeason(s) {
   renderSeasonContent(s);
 }
 
+function seasonRecapHTML(s, games, playerSeason, rec) {
+  const ratePool = playerSeason.filter(p=>p.ab>0);
+  const avgLeader = [...ratePool].sort((a,b)=>(b.avg??0)-(a.avg??0))[0];
+  const opsLeader = [...ratePool].sort((a,b)=>(b.ops??0)-(a.ops??0))[0];
+
+  const leaderRows = [
+    ['AVG', avgLeader, p=>fmtAvg(p.avg)],
+    ['OPS', opsLeader, p=>fmtAvg(p.ops)],
+    ['Hits', [...playerSeason].sort((a,b)=>b.h-a.h)[0], p=>fmtNum(p.h)],
+    ['Runs', [...playerSeason].sort((a,b)=>b.r-a.r)[0], p=>fmtNum(p.r)],
+    ['RBI', [...playerSeason].sort((a,b)=>b.rbi-a.rbi)[0], p=>fmtNum(p.rbi)],
+    ['Walks', [...playerSeason].sort((a,b)=>b.bb-a.bb)[0], p=>fmtNum(p.bb)],
+    ['Homers', [...playerSeason].sort((a,b)=>b.hr-a.hr)[0], p=>fmtNum(p.hr)],
+    ['RC', [...playerSeason].sort((a,b)=>b.rc-a.rc)[0], p=>fmtNum(p.rc,1)],
+  ].filter(([,p])=>p).map(([label,p,fn]) => `
+    <div class="mini-leader-row">
+      <div class="mini-rank">${label}</div>
+      <div class="mini-name" onclick="openPlayerProfile('${esc(p.name)}')">${h(p.name)}</div>
+      <div class="mini-val">${fn(p)}</div>
+    </div>`).join('');
+
+  return `<div class="card" style="margin-bottom:12px">
+      <div class="card-header">Season Leaders</div>
+      <div class="card-body">${leaderRows || '<div class="empty-state">No leader data</div>'}</div>
+    </div>`;
+}
+
 function renderSeasonContent(s) {
   const rec   = RAW.seasonRecords[s] || {w:0,l:0,t:0,rs:0,ra:0};
   const games = RAW.schedule.filter(g=>g.season===s).sort((a,b)=>a.game-b.game);
@@ -1458,6 +1710,9 @@ function renderSeasonContent(s) {
     .map(([name,p])=>({name,...p.seasons[s]}))
     .sort((a,b)=>(b.avg??-99)-(a.avg??-99));
   const recStr = rec.t>0 ? `${rec.w}\u2013${rec.l}\u2013${rec.t}` : `${rec.w}\u2013${rec.l}`;
+  const diff = rec.rs - rec.ra;
+  const walkoffs = playedGames.filter(g=>g.walkoff).length;
+  const playoffGames = playedGames.filter(g=>g.playoffs==='Yes').length;
 
   let html = `<div class="card" style="margin-bottom:12px">
     <div class="card-header" style="font-size:15px">${seasonLabel(s)}
@@ -1465,11 +1720,25 @@ function renderSeasonContent(s) {
     </div>
     <div class="card-body">
       <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(80px,1fr))">
-        ${[{l:'W',v:rec.w},{l:'L',v:rec.l},{l:'T',v:rec.t},{l:'RS',v:rec.rs},{l:'RA',v:rec.ra},{l:'Players',v:playerSeason.length},{l:'Games',v:playedGames.length}]
-          .map(x=>`<div class="stat-box"><div class="label">${x.l}</div><div class="value">${x.v}</div></div>`).join('')}
+        ${[
+          {l:'W',v:rec.w},
+          {l:'L',v:rec.l},
+          {l:'T',v:rec.t},
+          {l:'RS',v:rec.rs},
+          {l:'RA',v:rec.ra},
+          {l:'Run Diff',v:diff>0?`+${fmtNum(diff)}`:fmtNum(diff)},
+          {l:'R/G',v:playedGames.length ? fmtNum(rec.rs/playedGames.length,1) : '\u2014'},
+          {l:'RA/G',v:playedGames.length ? fmtNum(rec.ra/playedGames.length,1) : '\u2014'},
+          {l:'Walkoffs',v:walkoffs},
+          {l:'Playoffs',v:playoffGames},
+          {l:'Players',v:playerSeason.length},
+          {l:'Games',v:playedGames.length}
+        ].map(x=>`<div class="stat-box"><div class="label">${x.l}</div><div class="value" style="font-size:${String(x.v).length>5?'16px':'22px'}">${x.v}</div></div>`).join('')}
       </div>
     </div>
   </div>`;
+
+  html += seasonRecapHTML(s, games, playerSeason, rec);
 
   if (games.length) {
     html += `<div class="card" style="margin-bottom:12px">
@@ -1479,7 +1748,7 @@ function renderSeasonContent(s) {
           <div class="game-num">${g.game}</div>
           <div class="game-result-badge ${g.result||'U'}">${g.result||'–'}</div>
           <div class="game-info">
-            <div class="game-opponent" style="cursor:pointer" onclick="event.stopPropagation();openOpponentView('${esc(g.opponent)}')">${g.opponent}${g.playoffs==='Yes'?'<span class="tag-playoffs">Playoffs</span>':''}</div>
+            <div class="game-opponent" style="cursor:pointer" onclick="event.stopPropagation();openOpponentView('${esc(g.opponent)}')">${h(g.opponent)}${g.playoffs==='Yes'?'<span class="tag-playoffs">Playoffs</span>':''}${g.walkoff?'<span class="tag-walkoff">Walkoff</span>':''}</div>
             <div class="game-date">${g.date}</div>
           </div>
           <div class="game-score">
@@ -1503,7 +1772,7 @@ function renderSeasonContent(s) {
         </tr></thead>
         <tbody>
           ${playerSeason.map(p=>`<tr>
-            <td class="nc" onclick="openPlayerProfile('${esc(p.name)}')">${p.name}</td>
+            <td class="nc" onclick="openPlayerProfile('${esc(p.name)}')">${h(p.name)}</td>
             <td>${p.gp}</td><td>${fmtNum(p.ab)}</td><td>${fmtNum(p.h)}</td>
             <td>${fmtAvg(p.avg)}</td><td>${fmtAvg(p.obp)}</td><td>${fmtAvg(p.slg)}</td><td>${fmtAvg(p.ops)}</td>
             <td>${fmtNum(p.r)}</td><td>${fmtNum(p.rbi)}</td>
@@ -1557,7 +1826,7 @@ function openGameDetail(season, gameNum) {
 
   function lineScoreRow(team) {
     return `<tr>
-      <td style="padding:8px 10px;text-align:left;font-weight:600;color:var(--dark);font-family:'Inter',sans-serif;white-space:nowrap">${team.name}</td>
+      <td style="padding:8px 10px;text-align:left;font-weight:600;color:var(--dark);font-family:'Inter',sans-serif;white-space:nowrap">${h(team.name)}</td>
       ${Array.from({length:innings},(_,i)=>`
         <td style="padding:8px 10px;color:var(--dark);font-family:'DM Mono',monospace">${team.line[i] ?? ''}</td>
       `).join('')}
@@ -1608,7 +1877,7 @@ function openGameDetail(season, gameNum) {
     <div style="background:var(--green);color:white;padding:18px 20px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-family:'Bebas Neue';font-size:20px;letter-spacing:1px">Game ${gameNum} \u2014 ${seasonLabel(season)}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.7)">${game.date} \u00b7 vs ${game.opponent}${game.playoffs==='Yes'?' \u00b7 Playoffs':''}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7)">${game.date} \u00b7 vs ${h(game.opponent)}${game.playoffs==='Yes'?' \u00b7 Playoffs':''}${game.walkoff?' \u00b7 Walkoff':''}</div>
       </div>
       <div style="text-align:right">
         <div style="font-family:'Bebas Neue';font-size:32px">${scoreHtml}</div>
@@ -1620,7 +1889,7 @@ function openGameDetail(season, gameNum) {
       ${gamePlayers.length ? `<table style="width:100%">
         <thead><tr><th>Player</th><th>AB</th><th>H</th><th>AVG</th><th>OBP</th><th>OPS</th><th>PA</th><th>R</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>K</th><th>RC</th></tr></thead>
         <tbody>${gamePlayers.map(p=>`<tr style="${p.mvp?'background:var(--gold-pale)':''}">
-          <td class="nc" onclick="document.getElementById('gameDetailModal').remove();openPlayerProfile('${esc(p.name)}')">${p.name}${p.mvp?'<span class="tag-mvp">MVP</span>':''}</td>
+          <td class="nc" onclick="document.getElementById('gameDetailModal').remove();openPlayerProfile('${esc(p.name)}')">${h(p.name)}${p.mvp?'<span class="tag-mvp">MVP</span>':''}</td>
           <td>${p.ab}</td><td>${p.h}</td><td>${fmtAvg(p.avg)}</td><td>${fmtAvg(p.obp)}</td><td>${fmtAvg(p.ops)}</td>
           <td>${p.pa}</td><td>${p.r}</td><td>${p.rbi}</td><td>${p.d}</td><td>${p.t}</td>
           <td>${p.hr}</td><td>${p.bb}</td><td>${p.k}</td><td>${fmtNum(p.rc,1)}</td>
@@ -1641,7 +1910,7 @@ function renderPlayerGrid() {
   document.getElementById('playerGrid').innerHTML = players.map(([name,p]) => {
     const numSeasons = Object.keys(p.seasons).length;
     return `<div class="player-card" onclick="openPlayerProfile('${esc(name)}')">
-      <div class="player-card-name">${name}</div>
+      <div class="player-card-name">${h(name)}</div>
       <div class="player-card-seasons">${numSeasons} Season${numSeasons!==1?'s':''} &bull; ${p.gp} Games</div>
       <div class="player-card-rates">
         <div class="player-card-rate">
@@ -1691,7 +1960,7 @@ function openPlayerProfile(name) {
 
   document.getElementById('profileHeader').innerHTML = `
     <div>
-      <div class="profile-name">${name}</div>
+      <div class="profile-name">${h(name)}</div>
       <div class="profile-meta">${seasonsPlayed.map(seasonLabel).join(' \u00b7 ')}</div>
     </div>`;
 
@@ -1792,6 +2061,9 @@ function openOpponentView(opponent) {
   const t = games.filter(g=>g.result==='T').length;
   const rs = games.reduce((a,g)=>a+g.ohw,0);
   const ra = games.reduce((a,g)=>a+g.opp,0);
+  const walkoffs = games.filter(g=>g.walkoff).length;
+  const playoffGames = games.filter(g=>g.playoffs==='Yes').length;
+  const diff = rs - ra;
   const recStr = t>0 ? `${w}\u2013${l}\u2013${t}` : `${w}\u2013${l}`;
 
   // Collect player stats across all games vs this opponent
@@ -1821,7 +2093,7 @@ function openOpponentView(opponent) {
   modal.innerHTML = `<div style="max-width:750px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,0.3)">
     <div style="background:var(--green);color:white;padding:18px 20px;display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-family:'Bebas Neue';font-size:24px;letter-spacing:1px">vs ${opponent}</div>
+        <div style="font-family:'Bebas Neue';font-size:24px;letter-spacing:1px">vs ${h(opponent)}</div>
         <div style="font-size:12px;color:rgba(255,255,255,0.7)">${games.length} game${games.length!==1?'s':''} played</div>
       </div>
       <div style="text-align:right">
@@ -1830,23 +2102,33 @@ function openOpponentView(opponent) {
       </div>
     </div>
     <div style="padding:12px 16px;overflow-x:auto">
+      <div class="stat-grid" style="margin-bottom:14px">
+        ${[
+          ['Games', games.length],
+          ['Run Diff', diff>0?`+${fmtNum(diff)}`:fmtNum(diff)],
+          ['RS/G', fmtNum(rs/games.length,1)],
+          ['RA/G', fmtNum(ra/games.length,1)],
+          ['Walkoffs', walkoffs],
+          ['Playoffs', playoffGames],
+        ].map(([l,v])=>`<div class="stat-box"><div class="label">${l}</div><div class="value" style="font-size:${String(v).length>5?'15px':'20px'}">${v}</div></div>`).join('')}
+      </div>
       <div style="font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Game History</div>
       ${games.sort((a,b)=>a.overall-b.overall).map(g=>`
         <div class="game-row" onclick="document.getElementById('opponentModal').remove();openGameDetail('${g.season}',${g.game})" style="padding:8px 4px">
           <div class="game-num">${g.overall}</div>
           <div class="game-result-badge ${g.result}">${g.result}</div>
           <div class="game-info">
-            <div class="game-opponent">${seasonLabel(g.season)} · Game ${g.game}${g.playoffs==='Yes'?'<span class="tag-playoffs">Playoffs</span>':''}</div>
+            <div class="game-opponent">${seasonLabel(g.season)} · Game ${g.game}${g.playoffs==='Yes'?'<span class="tag-playoffs">Playoffs</span>':''}${g.walkoff?'<span class="tag-walkoff">Walkoff</span>':''}</div>
             <div class="game-date">${g.date}</div>
           </div>
           <div class="game-score">${g.result==='W'?`<span class="w-score">${g.ohw}</span>\u2013<span>${g.opp}</span>`:g.result==='L'?`<span>${g.ohw}</span>\u2013<span class="l-score">${g.opp}</span>`:`<span>${g.ohw}</span>\u2013<span>${g.opp}</span>`}</div>
         </div>`).join('')}
       ${playerRows.length ? `
-        <div style="font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;color:var(--muted);margin:16px 0 8px">Player Stats vs ${opponent}</div>
+        <div style="font-family:'Bebas Neue';font-size:14px;letter-spacing:1px;color:var(--muted);margin:16px 0 8px">Player Stats vs ${h(opponent)}</div>
         <div style="overflow-x:auto"><table style="width:100%">
           <thead><tr><th>Player</th><th>G</th><th>AB</th><th>H</th><th>AVG</th><th>OBP</th><th>OPS</th><th>R</th><th>RBI</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>K</th><th>MVP</th></tr></thead>
           <tbody>${playerRows.map(p=>`<tr>
-            <td class="nc" onclick="document.getElementById('opponentModal').remove();openPlayerProfile('${esc(p.name)}')">${p.name}</td>
+            <td class="nc" onclick="document.getElementById('opponentModal').remove();openPlayerProfile('${esc(p.name)}')">${h(p.name)}</td>
             <td>${p.gp}</td><td>${fmtNum(p.ab)}</td><td>${fmtNum(p.h)}</td>
             <td>${fmtAvg(p.avg)}</td><td>${fmtAvg(p.obp)}</td><td>${fmtAvg(p.ops)}</td>
             <td>${fmtNum(p.r)}</td><td>${fmtNum(p.rbi)}</td><td>${p.d}</td><td>${p.t}</td><td>${p.hr}</td><td>${p.bb}</td><td>${p.k}</td><td>${p.mvps||''}</td>
@@ -2061,6 +2343,205 @@ function buildCareerChart(p) {
   renderCareerChart(p, _chartActiveStat, _chartMode);
 }
 
+// ---- Compare ----
+function sortedPlayerNames() {
+  return Object.keys(RAW.players).sort((a,b)=>lastName(a).localeCompare(lastName(b)));
+}
+
+function playerSelectOptions(selected, includeBlank=true) {
+  const blank = includeBlank ? '<option value="">-- Player --</option>' : '';
+  return blank + sortedPlayerNames().map(n => `<option value="${attr(n)}" ${n===selected?'selected':''}>${h(n)}</option>`).join('');
+}
+
+function buildCompareSelectors() {
+  const names = Object.entries(RAW.players)
+    .sort((a,b)=>b[1].gp-a[1].gp)
+    .map(([n])=>n);
+  ['comparePlayer1','comparePlayer2','comparePlayer3','comparePlayer4'].forEach((id,i) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const val = i < 2 ? names[i] : '';
+    sel.innerHTML = playerSelectOptions(val, true);
+    sel.value = val || '';
+  });
+  renderCompare();
+}
+
+function compareMetricRows() {
+  return [
+    {label:'Seasons', get:p=>Object.keys(p.seasons).length, fmt:v=>fmtNum(v), desc:true},
+    {label:'Games', get:p=>p.gp, fmt:v=>fmtNum(v), desc:true},
+    {label:'AVG', get:p=>p.avg, fmt:fmtAvg, desc:true},
+    {label:'OBP', get:p=>p.obp, fmt:fmtAvg, desc:true},
+    {label:'SLG', get:p=>p.slg, fmt:fmtAvg, desc:true},
+    {label:'OPS', get:p=>p.ops, fmt:fmtAvg, desc:true},
+    {label:'RC/PA', get:p=>p.rc_pa, fmt:fmtAvg, desc:true},
+    {label:'Hits', get:p=>p.h, fmt:v=>fmtNum(v), desc:true},
+    {label:'Runs', get:p=>p.r, fmt:v=>fmtNum(v), desc:true},
+    {label:'RBI', get:p=>p.rbi, fmt:v=>fmtNum(v), desc:true},
+    {label:'2B', get:p=>p.d, fmt:v=>fmtNum(v), desc:true},
+    {label:'3B', get:p=>p.t, fmt:v=>fmtNum(v), desc:true},
+    {label:'HR', get:p=>p.hr, fmt:v=>fmtNum(v), desc:true},
+    {label:'BB', get:p=>p.bb, fmt:v=>fmtNum(v), desc:true},
+    {label:'K', get:p=>p.k, fmt:v=>fmtNum(v), desc:false},
+    {label:'RC', get:p=>p.rc, fmt:v=>fmtNum(v,1), desc:true},
+    {label:'Game MVPs', get:p=>p.mvps, fmt:v=>fmtNum(v), desc:true},
+    {label:'Longest Hit Streak', get:p=>p.hit_streak, fmt:v=>fmtNum(v), desc:true},
+  ];
+}
+
+function compareLeaderValue(values, desc=true) {
+  const nums = values.filter(v=>Number.isFinite(v));
+  if (!nums.length) return null;
+  return desc === false ? Math.min(...nums) : Math.max(...nums);
+}
+
+function renderCompare() {
+  if (!RAW) return;
+  const selected = ['comparePlayer1','comparePlayer2','comparePlayer3','comparePlayer4']
+    .map(id => document.getElementById(id)?.value || '')
+    .filter(Boolean)
+    .filter((v,i,arr)=>arr.indexOf(v)===i);
+  const players = selected.map(name => ({ name, data: RAW.players[name] })).filter(x=>x.data);
+
+  if (!players.length) {
+    document.getElementById('compareContent').innerHTML = '<div class="empty-state">Choose players to compare.</div>';
+    return;
+  }
+
+  const cards = `<div class="compare-grid">${players.map(({name,data}) => `
+    <div class="compare-card">
+      <div class="compare-name" onclick="openPlayerProfile('${esc(name)}')" style="cursor:pointer">${h(name)}</div>
+      <div class="compare-meta">${Object.keys(data.seasons).length} seasons · ${fmtNum(data.gp)} games</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+        ${[
+          ['AVG', fmtAvg(data.avg)], ['OPS', fmtAvg(data.ops)], ['HR', fmtNum(data.hr)],
+          ['RBI', fmtNum(data.rbi)], ['RC', fmtNum(data.rc,1)], ['Game MVPs', fmtNum(data.mvps)]
+        ].map(([l,v]) => `<div class="stat-box"><div class="label">${l}</div><div class="value" style="font-size:${String(v).length>5?'15px':'20px'}">${v}</div></div>`).join('')}
+      </div>
+    </div>`).join('')}</div>`;
+
+  const rows = compareMetricRows();
+  const table = `<div class="card"><div class="card-header">Career Comparison</div>
+    <div class="tbl-wrap"><table class="compare-table">
+      <thead><tr><th class="stat-col">Stat</th>${players.map(p=>`<th>${h(p.name)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(row=>{
+        const values = players.map(p=>row.get(p.data));
+        const leader = compareLeaderValue(values, row.desc);
+        const hasLeader = leader !== null && values.some(v=>Number.isFinite(v) && v !== leader);
+        return `<tr><td style="text-align:left;font-weight:700;font-family:'Inter'">${row.label}</td>${players.map((p,i)=>{
+          const v = values[i];
+          const cls = hasLeader && Number.isFinite(v) && v === leader ? ' class="leader-cell"' : '';
+          return `<td${cls}>${row.fmt(v)}</td>`;
+        }).join('')}</tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>`;
+
+  document.getElementById('compareContent').innerHTML = cards + table;
+  if (window.rebuildStickyHeaders) window.rebuildStickyHeaders();
+}
+
+// ---- Records ----
+function recordCard(title, rows, valFn, metaFn, limit=5) {
+  const safeRows = rows || [];
+  const body = safeRows.length ? safeRows.slice(0,limit).map((row,i)=>{
+      const label = row.name || (row.opponent ? `vs ${row.opponent}` : `${seasonLabel(row.season||'')} Game ${row.game||''}`);
+      return `
+      <div class="record-row">
+        <div class="record-rank">${i+1}</div>
+        <div class="record-name" onclick="${row.game ? `openGameDetail('${esc(row.season)}',${row.game})` : `openPlayerProfile('${esc(row.name)}')`}">${h(label)}</div>
+        <div class="record-val">${h(valFn(row))}</div>
+      </div>
+      ${metaFn ? `<div class="mini-note" style="padding-left:32px">${metaFn(row)}</div>` : ''}
+    `;
+    }).join('') : '<div class="empty-state" style="padding:12px 0">No qualifying records</div>';
+  return `<div class="record-card">
+    <div class="record-title">${h(title)}</div>
+    ${body}
+  </div>`;
+}
+
+function milestoneRows(field, milestones, label, options={}) {
+  const minCurrent = options.minCurrent ?? 0;
+  const maxAway = options.maxAway ?? Infinity;
+  return Object.entries(RAW.players).map(([name,p]) => {
+    const cur = p[field] || 0;
+    if (cur < minCurrent) return null;
+    const next = milestones.find(m => m > cur);
+    if (!next) return null;
+    if (next - cur > maxAway) return null;
+    return { name, cur, next, away: next-cur, label };
+  }).filter(Boolean).sort((a,b)=>a.away-b.away || b.cur-a.cur).slice(0,10);
+}
+
+function renderRecords() {
+  if (!RAW) return;
+  const players = Object.entries(RAW.players).map(([name,p]) => ({ name, ...p }));
+  const seasonRows = [];
+  Object.entries(RAW.indexes.playersBySeason).forEach(([season, rows]) => {
+    rows.forEach(r => seasonRows.push({ season, ...r }));
+  });
+  const gameRows = RAW.indexes.singleGameRows;
+  const byDesc = field => (a,b)=>(b[field]||0)-(a[field]||0);
+  const withValue = (rows, field) => rows.filter(r=>(r[field]||0)>0).sort(byDesc(field));
+  const gameMeta = row => {
+    const bits = [];
+    if (row.sched?.date) bits.push(h(row.sched.date));
+    if (row.sched?.opponent) bits.push(`vs ${h(row.sched.opponent)}`);
+    return bits.join(' &middot; ');
+  };
+
+  const career = [
+    recordCard('Career Hits', withValue([...players], 'h'), r=>fmtNum(r.h)),
+    recordCard('Career Doubles', withValue([...players], 'd'), r=>fmtNum(r.d)),
+    recordCard('Career Triples', withValue([...players], 't'), r=>fmtNum(r.t)),
+    recordCard('Career Walks', withValue([...players], 'bb'), r=>fmtNum(r.bb)),
+    recordCard('Career HR', withValue([...players], 'hr'), r=>fmtNum(r.hr)),
+    recordCard('Career RBI', withValue([...players], 'rbi'), r=>fmtNum(r.rbi)),
+    recordCard('Career Runs', withValue([...players], 'r'), r=>fmtNum(r.r)),
+    recordCard('Career MVPs', withValue([...players], 'mvps'), r=>fmtNum(r.mvps)),
+    recordCard('Longest Hit Streak', withValue([...players], 'hit_streak'), r=>fmtNum(r.hit_streak)),
+  ].join('');
+
+  const singleSeason = [
+    recordCard(`Single-Season AVG (${RECORD_RATE_MIN_AB}+ AB)`, seasonRows.filter(r=>r.ab>=RECORD_RATE_MIN_AB).sort((a,b)=>(b.avg??0)-(a.avg??0)), r=>fmtAvg(r.avg), r=>seasonLabel(r.season)),
+    recordCard(`Single-Season OPS (${RECORD_RATE_MIN_AB}+ AB)`, seasonRows.filter(r=>r.ab>=RECORD_RATE_MIN_AB).sort((a,b)=>(b.ops??0)-(a.ops??0)), r=>fmtAvg(r.ops), r=>seasonLabel(r.season)),
+    recordCard('Single-Season Hits', withValue([...seasonRows], 'h'), r=>fmtNum(r.h), r=>seasonLabel(r.season)),
+    recordCard('Single-Season Doubles', withValue([...seasonRows], 'd'), r=>fmtNum(r.d), r=>seasonLabel(r.season)),
+    recordCard('Single-Season Triples', withValue([...seasonRows], 't'), r=>fmtNum(r.t), r=>seasonLabel(r.season)),
+    recordCard('Single-Season Walks', withValue([...seasonRows], 'bb'), r=>fmtNum(r.bb), r=>seasonLabel(r.season)),
+    recordCard('Single-Season HR', withValue([...seasonRows], 'hr'), r=>fmtNum(r.hr), r=>seasonLabel(r.season)),
+    recordCard('Single-Season RBI', withValue([...seasonRows], 'rbi'), r=>fmtNum(r.rbi), r=>seasonLabel(r.season)),
+    recordCard('Single-Season RC', withValue([...seasonRows], 'rc'), r=>fmtNum(r.rc,1), r=>seasonLabel(r.season)),
+  ].join('');
+
+  const singleGame = [
+    recordCard('Single-Game Hits', withValue([...gameRows], 'h'), r=>fmtNum(r.h), gameMeta),
+    recordCard('Single-Game Doubles', withValue([...gameRows], 'd'), r=>fmtNum(r.d), gameMeta),
+    recordCard('Single-Game Triples', withValue([...gameRows], 't'), r=>fmtNum(r.t), gameMeta),
+    recordCard('Single-Game Walks', withValue([...gameRows], 'bb'), r=>fmtNum(r.bb), gameMeta),
+    recordCard('Single-Game HR', withValue([...gameRows], 'hr'), r=>fmtNum(r.hr), gameMeta),
+    recordCard('Single-Game RBI', withValue([...gameRows], 'rbi'), r=>fmtNum(r.rbi), gameMeta),
+    recordCard('Single-Game RC', withValue([...gameRows], 'rc'), r=>fmtNum(r.rc,1), gameMeta),
+  ].join('');
+
+  const milestones = [
+    ...milestoneRows('h', NEXT_HIT_MILESTONES, 'hits', {minCurrent:40, maxAway:10}),
+    ...milestoneRows('hr', NEXT_HR_MILESTONES, 'HR', {minCurrent:5, maxAway:5}),
+  ].sort((a,b)=>a.away-b.away).slice(0,10);
+
+  const milestoneCard = recordCard('Milestone Chases', milestones, r=>`${r.away} away`, r=>`${fmtNum(r.cur)} ${r.label} · next: ${fmtNum(r.next)}`, 10);
+  const walkoffCard = recordCard('Walkoff Wins', RAW.indexes.walkoffs.slice().reverse(), r=>`${r.ohw}-${r.opp}`, r=>`${h(r.date)} &middot; vs ${h(r.opponent)}`, 10);
+
+  document.getElementById('recordsContent').innerHTML = `
+    <div class="record-section"><div class="section-label">Career Records</div><div class="record-list">${career}</div></div>
+    <div class="record-section"><div class="section-label">Single-Season Records</div><div class="record-list">${singleSeason}</div></div>
+    <div class="record-section"><div class="section-label">Single-Game Records</div><div class="record-list">${singleGame}</div></div>
+    <div class="record-section"><div class="section-label">Milestones & Games</div><div class="record-list">${milestoneCard}${walkoffCard}</div></div>
+  `;
+}
+
 // ---- Leaderboard ----
 const LB_CATS = [
   {id:'avg',        label:'AVG',                field:'avg',        fmt:fmtAvg,            minAB:MIN_AB_RATE, desc:true},
@@ -2097,6 +2578,14 @@ function buildSeasonFilter(selId) {
     seasons.map(s=>`<option value="${s}">${seasonLabel(s)}</option>`).join('');
 }
 
+function buildScheduleFilters() {
+  const sel = document.getElementById('schedOpponentFilter');
+  if (!sel) return;
+  const opponents = Object.keys(RAW.indexes.gamesByOpponent).sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML = '<option value="all">All Opponents</option>' +
+    opponents.map(o=>`<option value="${attr(o)}">${h(o)}</option>`).join('');
+}
+
 function renderLeaderboard() {
   const cat = LB_CATS.find(c=>c.id===lbActiveCat);
   const sf  = document.getElementById('lbSeasonFilter').value;
@@ -2122,7 +2611,7 @@ function renderLeaderboard() {
     `<div class="podium-card ${rankClass[i]}">
       <div class="podium-rank">${rankLabel[i]}</div>
       <div class="podium-initials">${initials(r.name)}</div>
-      <div class="podium-name" onclick="openPlayerProfile('${esc(r.name)}')">${r.name}</div>
+      <div class="podium-name" onclick="openPlayerProfile('${esc(r.name)}')">${h(r.name)}</div>
       <div class="podium-val">${cat.fmt(r.val)}</div>
     </div>`).join('');
 
@@ -2134,7 +2623,7 @@ function renderLeaderboard() {
     const st = sf==='all' ? r.careerStats : (r.stats||r.careerStats);
     return `<tr>
       <td>${i+1}</td>
-      <td class="nc" onclick="openPlayerProfile('${esc(r.name)}')">${r.name}</td>
+      <td class="nc" onclick="openPlayerProfile('${esc(r.name)}')">${h(r.name)}</td>
       <td style="font-weight:700;color:var(--green)">${cat.fmt(r.val)}</td>
       <td>${fmtNum(st.gp)}</td><td>${fmtNum(st.ab)}</td>
       <td>${fmtAvg(st.avg)}</td><td>${fmtAvg(st.ops)}</td>
@@ -2142,25 +2631,35 @@ function renderLeaderboard() {
       <td>${fmtNum(st.rc,1)}</td><td>${fmtNum(st.mvps)}</td>
     </tr>`;
   }).join('');
-}
   if (window.rebuildStickyHeaders) window.rebuildStickyHeaders();
+}
 
 // ---- Schedule ----
 function renderSchedule() {
   const sf = document.getElementById('schedSeasonFilter').value;
+  const of = document.getElementById('schedOpponentFilter')?.value || 'all';
+  const rf = document.getElementById('schedResultFilter')?.value || 'all';
+  const tf = document.getElementById('schedTypeFilter')?.value || 'all';
   let games = sf==='all' ? RAW.schedule : RAW.schedule.filter(g=>g.season===sf);
+  if (of !== 'all') games = games.filter(g=>g.opponent===of);
+  if (rf !== 'all') games = games.filter(g => rf==='U' ? g.result===null : g.result===rf);
+  if (tf === 'playoffs') games = games.filter(g => g.playoffs === 'Yes');
+  if (tf === 'walkoff') games = games.filter(g => g.walkoff);
+  if (tf === 'close') games = games.filter(g => g.result!==null && Math.abs(g.ohw-g.opp) <= 2);
+  if (tf === 'blowout') games = games.filter(g => g.result!==null && Math.abs(g.ohw-g.opp) >= 10);
   games = [...games].sort((a,b)=>a.overall-b.overall);
   const played = games.filter(g=>g.result!==null);
   const w=played.filter(g=>g.result==='W').length;
   const l=played.filter(g=>g.result==='L').length;
   const t=played.filter(g=>g.result==='T').length;
-  document.getElementById('schedRecord').textContent = t>0 ? `${w}\u2013${l}\u2013${t}` : `${w}\u2013${l}`;
-  document.getElementById('scheduleList').innerHTML = games.map(g =>
+  const walkoffs = played.filter(g=>g.walkoff).length;
+  document.getElementById('schedRecord').textContent = `${played.length} games · ${t>0 ? `${w}\u2013${l}\u2013${t}` : `${w}\u2013${l}`}${walkoffs?` · ${walkoffs} WO`:''}`;
+  document.getElementById('scheduleList').innerHTML = games.length ? games.map(g =>
     `<div class="game-row" onclick="openGameDetail('${g.season}',${g.game})">
       <div class="game-num">${g.overall}</div>
       <div class="game-result-badge ${g.result||'U'}">${g.result||'–'}</div>
       <div class="game-info">
-        <div class="game-opponent" style="cursor:pointer" onclick="event.stopPropagation();openOpponentView('${esc(g.opponent)}')">${g.opponent}${g.playoffs==='Yes'?'<span class="tag-playoffs">Playoffs</span>':''}</div>
+        <div class="game-opponent" style="cursor:pointer" onclick="event.stopPropagation();openOpponentView('${esc(g.opponent)}')">${h(g.opponent)}${g.playoffs==='Yes'?'<span class="tag-playoffs">Playoffs</span>':''}${g.walkoff?'<span class="tag-walkoff">Walkoff</span>':''}</div>
         <div class="game-date">${seasonLabel(g.season)} \u00b7 Game ${g.game} \u00b7 ${g.date}</div>
       </div>
       <div class="game-score">
@@ -2169,16 +2668,34 @@ function renderSchedule() {
         : g.result==='L' ? `<span>${g.ohw}</span>\u2013<span class="l-score">${g.opp}</span>`
         : `<span>${g.ohw}</span>\u2013<span>${g.opp}</span>`}
       </div>
-    </div>`).join('');
+    </div>`).join('') : '<div class="empty-state">No games match these filters.</div>';
 }
 
 // ---- Fetch & Init ----
 function setProgress(pct) { document.getElementById('loadingBar').style.width = pct + '%'; }
 
 async function fetchCSV(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.text();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.text();
+  } catch(err) {
+    if (err.name === 'AbortError') throw new Error('Google Sheets request timed out');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function hideLoadingScreen() {
+  const screen = document.getElementById('loadingScreen');
+  if (!screen) return;
+  screen.classList.add('hidden');
+  setTimeout(() => {
+    if (screen.classList.contains('hidden')) screen.style.display = 'none';
+  }, 700);
 }
 
 async function init() {
@@ -2194,10 +2711,13 @@ async function init() {
     renderLbCats();
     buildSeasonFilter('lbSeasonFilter');
     buildSeasonFilter('schedSeasonFilter');
+    buildScheduleFilters();
+    buildCompareSelectors();
+    renderRecords();
     renderLeaderboard();
     renderSchedule();
     setProgress(100);
-    setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 300);
+    setTimeout(hideLoadingScreen, 300);
   // Measure actual nav height and set CSS variable
   (function() {
     var h = document.querySelector('.site-header');
