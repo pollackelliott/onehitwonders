@@ -137,6 +137,5 @@ This project demonstrates how historical operational data can be transformed int
 
 - Additional statistical visualizations
 - Expanded advanced metrics
-- Head-to-head player comparisons
 - Enhanced trend analysis
 - Improved historical reporting
